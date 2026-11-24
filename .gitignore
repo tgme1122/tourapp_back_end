@@ -1,0 +1,11 @@
+../.env
+./private
+@"
+.venv/
+__pycache__/
+*.pyc
+.env
+.idea/
+*.db
+*.sqlite3
+"@ | Set-Content -Path .gitignore -Encoding utf8
