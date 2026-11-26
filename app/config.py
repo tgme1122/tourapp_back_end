@@ -1,7 +1,9 @@
+import json
 from pathlib import Path
+from typing import Annotated
 
-from pydantic import model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent  # loyiha ildizi
 
@@ -13,8 +15,34 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    CORS_ORIGINS: list[str] = []
+    CORS_ORIGINS: Annotated[list[str], NoDecode] = []
     ALLOW_LOCAL_CORS: bool = True
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: object) -> object:
+        if not isinstance(v, str):
+            return v
+        url = v.strip()
+        if url.startswith("postgres://"):
+            return "postgresql+psycopg2://" + url[len("postgres://"):]
+        if url.startswith("postgresql://"):
+            return "postgresql+psycopg2://" + url[len("postgresql://"):]
+        if url.startswith("postgresql+psycopg://"):
+            return "postgresql+psycopg2://" + url[len("postgresql+psycopg://"):]
+        return url
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: object) -> object:
+        if isinstance(v, str):
+            s = v.strip()
+            if not s:
+                return []
+            if s.startswith("["):
+                return json.loads(s)
+            return [item.strip() for item in s.split(",") if item.strip()]
+        return v
 
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587

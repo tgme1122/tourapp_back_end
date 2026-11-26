@@ -65,6 +65,13 @@ app.add_middleware(
 
 app.mount("/media", StaticFiles(directory=MEDIA_ROOT), name="media")
 
+
+@app.get("/", tags=["health"])
+@app.get("/health", tags=["health"])
+def healthcheck():
+    return {"status": "ok"}
+
+
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(tours.router)
